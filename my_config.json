@@ -1,0 +1,28 @@
+{
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "PROXY",
+      "server": "185.215.244.226",
+      "server_port": 8443,
+      "uuid": "8ea5c376-df8d-4b95-b236-ff9e8df51205",
+      "flow": "xtls-rprx-vision",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.google.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "MYqqcfMlnaFRIbE3kdRyFpQnjkq0KcJHCB--6GAffHA",
+          "short_id": "b1ca892d2666aa73"
+        }
+      }
+    }
+  ],
+  "route": {
+    "final": "PROXY"
+  }
+}
