@@ -1,0 +1,44 @@
+{
+  "log": {
+    "level": "info",
+    "timestamp": true,
+    "output": "/var/log/sing-box/access.log"
+  },
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-reality-in",
+      "listen": "::",
+      "listen_port": 443,
+      "users": [
+        {
+          "uuid": "****UUID که ساختی****",
+          "flow": "xtls-rprx-vision"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "www.nginx.com",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "www.nginx.com",
+            "server_port": 443
+          },
+          "private_key": "****PrivateKey که ساختی****",
+          "short_id": ["****Short ID که ساختی****"]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ]
+}
