@@ -1,0 +1,59 @@
+{
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "PROXY",
+      "server": "آی‌پی_سرورت",              // مثلاً 123.123.123.123
+      "server_port": 8443,                  // دقیقاً همون پورتی که تو سرور زدی
+      "uuid": "UUID_که_ساختی",              // این همون UUID خودته
+      "flow": "xtls-rprx-vision",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.microsoft.com",  // یا هر SNI که گفتی (مثلاً www.nginx.com)
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "کلید_عمومی_REALITY", // کلید PublicKey که یادت رفت؟!
+          "short_id": "short_id_که_ساختی"
+        }
+      }
+    },
+    {
+      "type": "direct",
+      "tag": "DIRECT"
+    },
+    {
+      "type": "block",
+      "tag": "BLOCK"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "DIRECT"
+      },
+      {
+        "geoip": ["ir", "private"],
+        "outbound": "DIRECT"
+      },
+      {
+        "geosite": ["category-ads-all"],
+        "outbound": "BLOCK"
+      }
+    ],
+    "final": "PROXY"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "inet4_address": "172.19.0.1/30",
+      "auto_route": true,
+      "strict_route": true
+    }
+  ]
+}
