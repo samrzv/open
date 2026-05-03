@@ -3,3 +3,41 @@
 
 
 همون XRAY+CADDY برای Windows server 2019
+
+
+ssh root@YOUR_SERVER_IP
+
+apt update && apt upgrade -y
+apt install curl wget unzip socat cron gnupg2 ca-certificates lsb-release software-properties-common -y
+
+timedatectl set-timezone Asia/Tehran
+
+apt install ufw -y
+
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+
+ufw enable
+ufw status
+
+bash <(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)
+
+xray version
+
+cat /proc/sys/kernel/random/uuid
+
+nano /usr/local/etc/xray/config.json
+
+apt install nginx -y
+
+nano /etc/nginx/sites-available/default
+
+nginx -t
+
+systemctl restart nginx
+systemctl enable nginx
+
+systemctl restart xray
+systemctl enable xray
+systemctl status xray
