@@ -1,0 +1,267 @@
+بخش 1 — پیش‌نیازها
+
+شما نیاز داری به:
+
+1. یک VPS خام با Ubuntu
+
+مثلاً:
+
+Ubuntu 22.04
+Ubuntu 24.04
+2. یک دامنه
+
+مثلاً:
+
+example.com
+3. اکانت Cloudflare
+دامنه باید روی Cloudflare مدیریت شود.
+
+بخش 2 — اتصال اولیه به سرور
+
+از سیستم خودت:
+
+ssh root@YOUR_SERVER_IP
+
+مثلاً:
+
+ssh root@185.xxx.xxx.xxx
+بخش 3 — آپدیت کامل سرور
+
+اولین کار همیشه:
+
+apt update && apt upgrade -y
+apt install curl wget unzip socat cron gnupg2 ca-certificates lsb-release software-properties-common -y
+بخش 4 — تنظیم timezone
+
+برای جلوگیری از مشکل لاگ و کرون:
+
+timedatectl set-timezone Asia/Tehran
+
+بررسی:
+
+timedatectl
+بخش 5 — ساخت کاربر غیر root (اختیاری ولی بهتر)
+
+مثلاً:
+
+adduser admin
+usermod -aG sudo admin
+
+فعلاً می‌توانی با root ادامه بدهی.
+
+بخش 6 — نصب و تنظیم UFW (فایروال)
+
+تو گفتی حتی UFW هم ست نشده، پس کامل:
+
+نصب:
+apt install ufw -y
+باز کردن پورت‌های ضروری:
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+
+اگر SSH روی پورت دیگری است باید همان را باز کنی.
+
+فعال‌سازی:
+ufw enable
+بررسی:
+ufw status
+
+باید چیزی شبیه این ببینی:
+
+22/tcp ALLOW
+80/tcp ALLOW
+443/tcp ALLOW
+بخش 7 — تنظیم دامنه روی Cloudflare
+
+وارد پنل Cloudflare شو.
+
+ساخت DNS Record
+
+برو به:
+
+DNS → Records
+اضافه کن:
+Type	Name	Content
+A	dg	IP سرور
+
+مثلاً:
+
+dg.example.com → 185.xxx.xxx.xxx
+بسیار مهم: Proxy Status
+
+باید روی:
+
+Proxied (orange cloud)
+
+باشد.
+
+نه:
+
+DNS only
+بخش SSL/TLS
+
+برو به:
+
+SSL/TLS → Overview
+
+تنظیم کن روی:
+
+Flexible
+
+(برای کانفیگ بدون TLS مثل لینک شما)
+
+بخش 8 — نصب Xray Core
+
+ما از Xray-core استفاده می‌کنیم.
+
+نصب رسمی:
+bash <(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)
+
+بررسی:
+
+xray version
+بخش 9 — ساخت UUID
+
+برای VLESS نیاز داریم:
+
+cat /proc/sys/kernel/random/uuid
+
+مثلاً خروجی:
+
+b1188580-5036-451d-8c46-22b02992ca3c
+
+این را نگه دار.
+
+بخش 10 — ساخت فایل کانفیگ Xray
+
+فایل اصلی:
+
+nano /usr/local/etc/xray/config.json
+
+کل محتوای قبلی را پاک کن و این را بگذار:
+
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 8080,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "UUID_HERE",
+            "level": 0,
+            "email": "user@vless"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/private"
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom"
+    }
+  ]
+}
+مهم:
+
+به جای:
+
+UUID_HERE
+
+UUID خودت را بگذار.
+
+بخش 11 — نصب Nginx
+
+چون Cloudflare روی 80 می‌آید و Xray روی 8080 گوش می‌دهد.
+
+نصب:
+apt install nginx -y
+بخش 12 — تنظیم Reverse Proxy
+
+فایل:
+
+nano /etc/nginx/sites-available/default
+
+کل محتوا را پاک کن و این را بگذار:
+
+server {
+    listen 80;
+    server_name dg.example.com;
+
+    location /private {
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        return 200 'OK';
+        add_header Content-Type text/plain;
+    }
+}
+مهم:
+
+به جای:
+
+dg.example.com
+
+دامنه واقعی خودت را بگذار.
+
+بخش 13 — تست Nginx
+nginx -t
+
+اگر OK بود:
+
+systemctl restart nginx
+systemctl enable nginx
+بخش 14 — استارت Xray
+systemctl restart xray
+systemctl enable xray
+systemctl status xray
+
+باید:
+
+active (running)
+
+باشد.
+
+بخش 15 — لینک نهایی کانفیگ
+
+فرمت:
+
+vless://UUID@yourdomain:80?encryption=none&host=yourdomain&path=%2Fprivate&security=none&type=ws#NAME
+
+مثلاً:
+
+vless://b1188580-5036-451d-8c46-22b02992ca3c@yourdomain.com:80?encryption=none&host=yourdomain.com&path=%2Fprivate&security=none&type=ws#VIP
+نکته خیلی مهم
+
+اگر بخواهی:
+
+پایداری بیشتر
+امنیت بهتر
+TLS واقعی
+پورت 443
+Reality
+XTLS
+gRPC
+Trojan
+
+داشته باشی، بهتر است نسخه حرفه‌ای‌تر راه‌اندازی شود.
+
+اما چون خواستی دقیقاً مشابه لینک باشد، همین ساختار درست است.
